@@ -1,0 +1,41 @@
+---
+title: "UI.morphology"
+output: pdf_document
+---
+#####This is for pollen tube growth analyses for HT transgenics
+```{r}
+setwd("/Users/jennahamlin/UIproject")
+library(ggplot2)
+library(arm)
+
+mydata<-read.csv("PT.measurements.HT.csv", header=T)
+```
+
+```{r}
+lm1<-lm(Percent ~ Type, data=mydata)
+
+# Create a data frame 'estimates' to hold...
+# the means, SDs, SEMs or interval bounds:
+estimates <- expand.grid(Type=levels(mydata$Type))
+# Add the mean heights to the dataframe
+#estimates$Height  <- predict(lm1, newdata= estimates)
+# alternatively, mean heights using tapply()
+estimates$Height  <- tapply(mydata$Percent, mydata$Type, mean)
+
+##### Means with 95% CIs
+# add 95% CI upper and lower bounds to estimates dataframe
+estimates$C95_lwr  <- predict(lm1, newdata= estimates, interval="confidence")[,2]
+estimates$C95_upr  <- predict(lm1, newdata= estimates, interval="confidence")[,3]
+
+estimates
+```
+# Plot of means with 95% CIs
+```{r, echo=FALSE}
+p <- qplot(Type, Height,data=estimates, ylab="Proportion Pollen Tube Growth")
+p +geom_linerange(aes(min=C95_lwr, max=C95_upr), size = 2) + theme_bw()+ geom_point(size = 3)+
+  scale_y_reverse(limits=c(1.2, 0), breaks=c(1,0.75, 0.50,0.25,0))+ coord_fixed(ratio = 4)+
+  theme(axis.title = element_text(family = "Helvetica", color="black", face="bold", size=22))+ 
+  theme(axis.text = element_text(family ='Helvetica', colour = "black", size =16))+ 
+  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1))
+```
+
